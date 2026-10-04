@@ -30,6 +30,6 @@ class Reports extends Model
     }
 
     public function responses() {
-        return $this->hasMany(ReportsLogs::class, 'report_id');
+        return $this->hasMany(ReportResponses::class, 'report_id');
     }
 }
