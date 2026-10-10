@@ -11,25 +11,26 @@ class Reports extends Model
     use HasFactory, HasUuids;
 
     protected $fillable = [
-        'user_id',
-        'title',
-        'description',
-        'location',
-        'category',
-        'status',
-        'is_anonymous',
-        'evidence_image',
+        "user_id",
+        "title",
+        "description",
+        "location",
+        "category",
+        "status",
+        "evidence_image",
     ];
 
     protected $casts = [
-        'is_anonymous' => 'boolean',
+        "is_anonymous" => "boolean",
     ];
 
-    public function user() {
-        return $this->belongsTo(User::class, 'user_id');
+    public function user()
+    {
+        return $this->belongsTo(User::class, "user_id");
     }
 
-    public function responses() {
-        return $this->hasMany(ReportResponses::class, 'report_id');
+    public function responses()
+    {
+        return $this->hasMany(ReportResponses::class, "report_id");
     }
 }

@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('reports', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('title',150);
             $table->text('description');
+            $table->enum('category', ['merusak fasilitas', 'membuat kegaduhan', 'parkir sembarangan', 'merokok di lingkungan sekolah', 'lainnya']);
             $table->text('location');
-            $table->boolean('is_anonymous')->default(false);
             $table->enum('status', ['menunggu', 'diproses', 'ditolak', 'selesai'])->default('menunggu');
             $table->string('evidence_image')->nullable();
             $table->timestamps();

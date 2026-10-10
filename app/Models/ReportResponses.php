@@ -8,27 +8,24 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ReportResponses extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
-    public $timestamps = false;
+    protected $table = "reports_responses";
 
     protected $fillable = [
-        'report_id',
-        'user_id',
-        'reports_response',
-        'created_at'
+        "report_id",
+        "user_id",
+        "response",
+        "status_tracking",
     ];
 
-    protected $casts = [
-        'created_at' => 'datetime'
-    ];
-
-    public function report() {
-        return $this->belongsTo(Reports::class, 'report_id');
+    public function report()
+    {
+        return $this->belongsTo(Reports::class, "report_id");
     }
 
-    public function officer() {
-        return $this->belongsTo(User::class, 'user_id');
+    public function user()
+    {
+        return $this->belongsTo(User::class, "user_id");
     }
-
 }

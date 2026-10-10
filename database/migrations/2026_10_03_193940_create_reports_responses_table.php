@@ -15,7 +15,8 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('report_id')->constrained('reports')->cascadeOnDelete();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
-            $table->text('reports_response');
+            $table->text('response');
+            $table->enum('status_tracking', ['diproses', 'selesai', 'ditolak'])->default('diproses');
             $table->timestamps();
         });
     }
