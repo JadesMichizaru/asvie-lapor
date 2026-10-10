@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('title',150);
             $table->text('description');
-            $table->enum('category', ['merusak fasilitas', 'membuat kegaduhan', 'parkir sembarangan', 'merokok di lingkungan sekolah', 'lainnya']);
+            $table->enum('category', ['merusak_fasilitas', 'membuat_kegaduhan', 'parkir_sembarangan', 'merokok', 'tawuran', 'lainnya']);
             $table->text('location');
             $table->enum('status', ['menunggu', 'diproses', 'ditolak', 'selesai'])->default('menunggu');
             $table->string('evidence_image')->nullable();

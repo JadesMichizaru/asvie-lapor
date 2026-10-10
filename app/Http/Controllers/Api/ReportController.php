@@ -68,7 +68,7 @@ class ReportController extends Controller
             "description" => "required|string",
             "location" => "required|string",
             "category" =>
-                "required|in:merokok,tawuran,buang_sampah_sembarangan,membuat_kegaduhan,parkir_sembarangan,lainnya",
+                "required|in:merokok,tawuran,merusak_fasilitas,membuat_kegaduhan,parkir_sembarangan,lainnya",
             "is_anonymous" => "nullable|boolean",
             "evidence_file" => "nullable|file|mimes:png,jpg,jpeg,mp4|max:10240",
         ]);
