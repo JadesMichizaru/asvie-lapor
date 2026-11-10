@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ChatbotResponses;
 use App\Models\Reports;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -61,50 +62,51 @@ class AdminController extends Controller
     {
         $validator = Validator::make($request->all(), [
             "name" => "required|string|max:255",
-            "roles" => "required|in:admin,staff,guru",
+            "roles" => "required|in:admin,staff,guru,siswa,warga",
+            "nik" => "required_if:roles,siswa|nullable|string",
         ]);
 
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    "success" => false,
-                    "errors" => $validator->errors(),
-                ],
-                422,
-            );
+            return response()->json([
+                "success" => false,
+                "errors" => $validator->errors()
+            ], 422);
         }
 
-        $generatedEmail = Str::slug($request->name, "") . "@school.id";
+        // Otomatisasi generate Email dari Nama Lengkap
+        $baseSlug = Str::slug($request->name, "");
+        $generatedEmail = $baseSlug . "@school.id";
+        $count = User::where("email", "like", $baseSlug . "%")->count();
 
-        $count = User::where(
-            "email",
-            "like",
-            Str::slug($request->name, "") . "%",
-        )->count();
         if ($count > 0) {
-            $generatedEmail =
-                Str::slug($request->name, "") . ($count + 1) . "@school.id";
+            $generatedEmail = $baseSlug . ($count + 1) . "@school.id";
         }
 
-        $staff = User::create([
+        // Otomatisasi generate Password berdasarkan Role & NIK
+        $defaultPassword = "gurupassword543";
+        if ($request->roles === "siswa") {
+            $defaultPassword = "siswa" . ($request->nik ?? "123");
+        }
+
+        $user = User::create([
             "name" => $request->name,
             "email" => $generatedEmail,
-            "password" => Hash::make("gurupassword543"),
+            "password" => Hash::make($defaultPassword),
             "roles" => $request->roles,
+            "nik" => $request->nik,
         ]);
 
-        return response()->json(
-            [
-                "success" => true,
-                "message" => "Petugas/Guru berhasil ditambahkan",
-                "data" => [
-                    "user" => $staff,
-                    "default_password" => "gurupassword543",
-                ],
+        return response()->json([
+            "success" => true,
+            "message" => "Akun berhasil ditambahkan",
+            "data" => [
+                "user" => $user,
+                "default_password" => $defaultPassword,
+                "generated_email" => $generatedEmail
             ],
-            201,
-        );
+        ], 201);
     }
+
 
     public function updateStaff(Request $request, $name)
     {
@@ -148,29 +150,111 @@ class AdminController extends Controller
     }
 
     public function destroyStaff($name)
-    {
-        $staff = User::whereIn("roles", ["admin", "staff", "guru"])
-            ->where("name", urldecode($name))
-            ->first();
+        {
+            // Ubah query agar Admin bisa menghapus role apa saja dari dashboard
+            $user = User::where("name", urldecode($name))->first();
 
-        if (!$staff) {
-            return response()->json(
-                [
-                    "success" => false,
-                    "message" => "Petugas/Guru tidak ditemukan",
-                ],
-                404,
-            );
+            if (!$user) {
+                return response()->json(["success" => false, "message" => "Akun tidak ditemukan"], 404);
+            }
+
+            $user->delete();
+            return response()->json(["success" => true, "message" => "Akun berhasil dihapus"], 200);
         }
 
-        $staff->delete();
+    // Chatbot CRUD
+    //
 
-        return response()->json(
-            [
-                "success" => true,
-                "message" => "Akun petugas/guru berhasil dihapus",
-            ],
-            200,
-        );
+    public function indexChatbot()
+    {
+        $data = ChatbotResponses::with('creator:id,name')->latest()->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+        ], 200);
+    }
+
+    public function storeChatbot(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'keyword' => 'required|string|unique:chatbot_responses,keyword',
+            'response' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $chatbot = ChatbotResponses::create([
+            'keyword' => strtolower(trim($request->keyword)),
+            'response' => $request->response,
+            'created_by' => $request->user()->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Keyword chatbot berhasil ditambahkan',
+            'data' => $chatbot,
+        ], 201);
+    }
+
+    public function updateChatbot(Request $request, $id)
+    {
+        $chatbot = ChatbotResponses::find($id);
+
+        if (!$chatbot) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak ditemukan',
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'keyword' => 'sometimes|string|unique:chatbot_responses,keyword,' . $id,
+            'response' => 'sometimes|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $data = $request->only(['response']);
+        if ($request->has('keyword')) {
+            $data['keyword'] = strtolower(trim($request->keyword));
+        }
+
+        $chatbot->update($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data chatbot berhasil diperbarui',
+            'data' => $chatbot,
+        ], 200);
+    }
+
+    public function destroyChatbot($id)
+    {
+        $chatbot = ChatbotResponses::find($id);
+
+        if (!$chatbot) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak ditemukan',
+            ], 404);
+        }
+
+        $chatbot->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Keyword chatbot berhasil dihapus',
+        ], 200);
     }
 }

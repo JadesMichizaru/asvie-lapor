@@ -11,46 +11,35 @@ use Illuminate\Support\Facades\Validator;
 class AuthController extends Controller
 {
     public function register(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            "name" => "required|string|max:255",
-            "email" => "required|email|unique:users",
-            "roles" => "sometimes|in:admin,guru,warga",
-            "password" => "required|min:8",
-        ]);
+        {
+            $validator = Validator::make($request->all(), [
+                "name" => "required|string|max:255",
+                "email" => "required|email|unique:users",
+                "roles" => "sometimes|in:admin,guru,warga,siswa",
+                "password" => "required|min:8",
+                "nik" => "required_if:roles,siswa|nullable|string",
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json(
-                [
-                    "errors" => $validator->errors(),
-                ],
-                422,
-            );
-        }
+            if ($validator->fails()) {
+                return response()->json(["errors" => $validator->errors()], 422);
+            }
 
-        $user = User::create([
-            "name" => $request->name,
-            "email" => $request->email,
-            "roles" => $request->roles ?? "warga",
-            "password" => Hash::make($request->password),
-        ]);
+            $user = User::create([
+                "name" => $request->name,
+                "email" => $request->email,
+                "roles" => $request->roles ?? "warga",
+                "password" => Hash::make($request->password),
+                "nik" => $request->nik,
+            ]);
 
-        $token = $user->createToken("auth-token")->plainTextToken;
+            $token = $user->createToken("auth-token")->plainTextToken;
 
-        return response()->json(
-            [
+            return response()->json([
                 "message" => "Registration successful",
                 "token" => $token,
-                "user" => [
-                    "id" => $user->id,
-                    "name" => $user->name,
-                    "email" => $user->email,
-                    "roles" => $user->roles,
-                ],
-            ],
-            201,
-        );
-    }
+                "user" => $user,
+            ], 201);
+        }
 
     public function login(Request $request)
     {

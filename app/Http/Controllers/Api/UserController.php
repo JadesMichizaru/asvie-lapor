@@ -10,25 +10,13 @@ use Illuminate\Support\Facades\Validator;
 class UserController extends Controller
 {
     public function index(Request $request)
-    {
-        $users = User::all();
-
-        if ($users->isEmpty()) {
-            return response()->json(
-                [
-                    "message" => "User is not found",
-                ],
-                404,
-            );
+        {
+            $users = User::latest()->get();
+            return response()->json([
+                "success" => true,
+                "data" => $users,
+            ], 200);
         }
-
-        return response()->json(
-            [
-                "users" => $users,
-            ],
-            200,
-        );
-    }
 
     public function show(Request $request, $name)
     {

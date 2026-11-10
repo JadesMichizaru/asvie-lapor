@@ -11,7 +11,7 @@
               </svg>
             </div>
             <div class="flex flex-col">
-              <span class="text-2xl font-black text-white tracking-wider leading-none">LAPOR!</span>
+              <span class="text-2xl font-black text-white tracking-wider leading-none">ASVIELAPOR!</span>
               <span class="text-[10px] font-semibold text-rose-100 tracking-tight mt-0.5">SMK As-Syafiiyah Jakarta</span>
             </div>
           </a>
@@ -257,6 +257,62 @@
       </section>
     </main>
 
+    <!-- FLOATING CHATBOT WIDGET -->
+    <div class="fixed bottom-6 right-6 z-50">
+      <!-- Chat Toggle Button -->
+      <button @click="isChatOpen = !isChatOpen" class="w-14 h-14 bg-[#12544F] hover:bg-teal-800 text-white rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 active:scale-95 focus:outline-none relative">
+        <svg v-if="!isChatOpen" class="w-6 h-6 stroke-current fill-none" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+        </svg>
+        <svg v-else class="w-6 h-6 stroke-current fill-none" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+
+      <!-- Chat Window Popup -->
+      <div v-if="isChatOpen" class="absolute bottom-18 right-0 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col h-[480px] animate-slide-up">
+        <!-- Chat Window Header -->
+        <div class="bg-[#12544F] text-white p-4 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-black text-xs">AI</div>
+            <div>
+              <h4 class="font-extrabold text-sm leading-none">Asvie Bot</h4>
+              <span class="text-[10px] text-teal-200 font-medium">Asisten Virtual ASVIELAPOR!</span>
+            </div>
+          </div>
+          <button @click="isChatOpen = false" class="text-white/80 hover:text-white">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Chat Messages Container -->
+        <div ref="chatContainer" class="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50 text-xs">
+          <div v-for="(msg, index) in chatMessages" :key="index" :class="['flex', msg.sender === 'user' ? 'justify-end' : 'justify-start']">
+            <div :class="['max-w-[80%] p-3 rounded-2xl font-medium leading-relaxed', msg.sender === 'user' ? 'bg-[#12544F] text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none shadow-sm']">
+              {{ msg.text }}
+            </div>
+          </div>
+          <div v-if="isBotTyping" class="flex justify-start">
+            <div class="bg-white border border-slate-200 p-3 rounded-2xl rounded-bl-none shadow-sm text-slate-400 font-bold animate-pulse">
+              Sedang mengetik...
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Input Form -->
+        <form @submit.prevent="sendChatMessage" class="p-3 bg-white border-t border-slate-200 flex items-center gap-2">
+          <input v-model="chatInput" type="text" placeholder="Tanyakan sesuatu..." class="flex-1 px-3 py-2 rounded-xl border border-slate-300 text-xs font-medium focus:border-[#12544F] focus:ring-1 focus:ring-[#12544F] outline-none">
+          <button type="submit" :disabled="!chatInput.trim() || isBotTyping" class="p-2 bg-[#12544F] hover:bg-teal-800 text-white rounded-xl transition-colors disabled:opacity-50">
+            <svg class="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+            </svg>
+          </button>
+        </form>
+      </div>
+    </div>
+
     <!-- FOOTER LENGKAP -->
     <footer class="bg-slate-950 text-white pt-16 pb-10 border-t border-slate-800">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -270,7 +326,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
                 </svg>
               </div>
-              <span class="text-xl font-black tracking-wider text-white">LAPOR! SMK As-Syafiiyah</span>
+              <span class="text-xl font-black tracking-wider text-white">ASVIELAPOR!</span>
             </div>
             <p class="text-xs text-slate-400 font-medium leading-relaxed max-w-sm">
               Sistem Pelaporan dan Layanan Pengaduan Resmi SMK As-Syafiiyah Jakarta. Berkomitmen menciptakan lingkungan sekolah yang tertib, transparan, dan responsif terhadap keluhan siswa serta wali murid.
@@ -296,26 +352,26 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                 </svg>
-                Jl. Bukit Duri Selatan No. 29, Kec. Tebet Kota Adm. Jakarta Selatan, Prov. D.K.I. Jakarta Kode Pos: 12840
+                Jl. Bukit Duri Selatan No. 29, Tebet, Jakarta Selatan
               </li>
               <li class="flex items-center gap-2">
                 <svg class="w-4 h-4 stroke-current text-[#12544F]" fill="none" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                 </svg>
-                (021) 8319994
+                (021) 8301234
               </li>
               <li class="flex items-center gap-2">
                 <svg class="w-4 h-4 stroke-current text-[#12544F]" fill="none" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                 </svg>
-                smk.assyafiiyah.jakarta@gmail.com
+                info@smkassyafiiyah.sch.id
               </li>
             </ul>
           </div>
         </div>
 
         <div class="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 font-medium gap-3">
-          <p>&copy; 2026 LAPOR! SMK As-Syafiiyah Jakarta. All rights reserved.</p>
+          <p>&copy; 2026 ASVIELAPOR! SMK As-Syafiiyah Jakarta. All rights reserved.</p>
           <p class="text-slate-400 font-semibold">Dikembangkan oleh Michizaru Studio</p>
         </div>
       </div>
@@ -327,26 +383,45 @@
         <button @click="showAuthModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
         <div class="text-center mb-6">
           <div class="w-10 h-10 bg-[#12544F] text-white rounded-lg flex items-center justify-center font-black mx-auto mb-3">L!</div>
-          <h3 class="text-lg font-extrabold text-slate-900">{{ authMode === 'login' ? 'Masuk ke LAPOR!' : 'Daftar Akun Baru' }}</h3>
+          <h3 class="text-lg font-extrabold text-slate-900">{{ authMode === 'login' ? 'Masuk ke ASVIELAPOR!' : 'Daftar Akun Baru' }}</h3>
         </div>
 
         <form @submit.prevent="handleAuthSubmit" class="space-y-4">
-          <div v-if="authMode === 'register'">
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap</label>
-            <input v-model="authForm.name" type="text" required class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Email</label>
-            <input v-model="authForm.email" type="email" required class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Kata Sandi</label>
-            <input v-model="authForm.password" type="password" required class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none">
-          </div>
-          <button type="submit" class="w-full py-3.5 bg-[#12544F] hover:bg-teal-800 text-white font-extrabold text-xs rounded-xl transition-all mt-2">
-            {{ authMode === 'login' ? 'Masuk' : 'Daftar' }}
-          </button>
-        </form>
+                  <div v-if="authMode === 'register'" class="space-y-4">
+                    <!-- Pilihan Role -->
+                    <div>
+                      <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Daftar Sebagai</label>
+                      <select v-model="authForm.roles" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none bg-white">
+                        <option value="warga">Warga / Masyarakat Umum</option>
+                        <option value="siswa">Siswa / Siswi Sekolah</option>
+                      </select>
+                    </div>
+
+                    <!-- NIK Khusus Siswa -->
+                    <div v-if="authForm.roles === 'siswa'" class="animate-slide-up">
+                      <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">NIK (Nomor Induk Kependudukan)</label>
+                      <input v-model="authForm.nik" type="text" required placeholder="Masukkan NIK" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none">
+                    </div>
+
+                    <!-- Field Nama -->
+                    <div>
+                      <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap</label>
+                      <input v-model="authForm.name" type="text" required class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none">
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Email</label>
+                    <input v-model="authForm.email" type="email" required class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Kata Sandi</label>
+                    <input v-model="authForm.password" type="password" required class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none">
+                  </div>
+                  <button type="submit" class="w-full py-3.5 bg-[#12544F] hover:bg-teal-800 text-white font-extrabold text-xs rounded-xl transition-all mt-2">
+                    {{ authMode === 'login' ? 'Masuk' : 'Daftar' }}
+                  </button>
+                </form>
       </div>
     </div>
   </div>
@@ -367,6 +442,15 @@ const fileName = ref('')
 const fileInput = ref(null)
 const notificationEnabled = ref(false)
 
+// Chatbot Reactive State
+const isChatOpen = ref(false)
+const chatInput = ref('')
+const isBotTyping = ref(false)
+const chatContainer = ref(null)
+const chatMessages = ref([
+  { sender: 'bot', text: 'Halo! Saya Asvie Bot. Ada yang bisa saya bantu terkait pelaporan di SMK As-Syafiiyah?' }
+])
+
 const chartTimeframe = ref('daily')
 let chartInstance = null
 
@@ -384,8 +468,50 @@ const form = reactive({
 const authForm = reactive({
   name: '',
   email: '',
+  roles: 'warga',
   password: ''
 })
+
+// Chatbot Submit Handler
+const sendChatMessage = async () => {
+  const text = chatInput.value.trim()
+  if (!text) return
+
+  chatMessages.value.push({ sender: 'user', text })
+  chatInput.value = ''
+  isBotTyping.value = true
+  await scrollChatToBottom()
+
+  try {
+    const res = await fetch('/api/chatbot/ask', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ message: text })
+    })
+
+    const data = await res.json()
+    if (res.ok && data.success) {
+      chatMessages.value.push({ sender: 'bot', text: data.reply })
+    } else {
+      chatMessages.value.push({ sender: 'bot', text: 'Maaf, terjadi masalah saat memproses pesan Anda.' })
+    }
+  } catch (error) {
+    chatMessages.value.push({ sender: 'bot', text: 'Gagal terhubung ke server chatbot.' })
+  } finally {
+    isBotTyping.value = false
+    await scrollChatToBottom()
+  }
+}
+
+const scrollChatToBottom = async () => {
+  await nextTick()
+  if (chatContainer.value) {
+    chatContainer.value.scrollTop = chatContainer.value.scrollHeight
+  }
+}
 
 const requestNotificationPermission = async () => {
   if (!('Notification' in window)) {
@@ -514,7 +640,6 @@ const getStatusBadgeClass = (status) => {
   }
 }
 
-// Logic pemrosesan data riil dari backend untuk Chart.js
 const processRealChartData = () => {
   const timeframe = chartTimeframe.value
   let labels = []
