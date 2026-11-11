@@ -467,7 +467,7 @@ const form = reactive({
 
 const authForm = reactive({
   name: '',
-  email: '',
+email: '',
   roles: 'warga',
   password: ''
 })
