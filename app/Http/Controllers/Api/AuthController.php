@@ -11,35 +11,42 @@ use Illuminate\Support\Facades\Validator;
 class AuthController extends Controller
 {
     public function register(Request $request)
-        {
-            $validator = Validator::make($request->all(), [
-                "name" => "required|string|max:255",
-                "email" => "required|email|unique:users",
-                "roles" => "sometimes|in:admin,guru,warga,siswa",
-                "password" => "required|min:8",
-                "nik" => "required_if:roles,siswa|nullable|string",
-            ]);
+    {
+        $validator = Validator::make($request->all(), [
+            "name" => "required|string|max:255",
+            "email" => "required|email|unique:users",
+            "roles" => "sometimes|in:admin,guru,warga,siswa",
+            "password" => "required|min:8",
+            "nis" => "required_if:roles,siswa|nullable|string|unique:users,nis",
+            "nik" => "required_if:roles,warga|nullable|string|unique:users,nik",
+        ]);
 
-            if ($validator->fails()) {
-                return response()->json(["errors" => $validator->errors()], 422);
-            }
-
-            $user = User::create([
-                "name" => $request->name,
-                "email" => $request->email,
-                "roles" => $request->roles ?? "warga",
-                "password" => Hash::make($request->password),
-                "nik" => $request->nik,
-            ]);
-
-            $token = $user->createToken("auth-token")->plainTextToken;
-
+        if ($validator->fails()) {
             return response()->json([
-                "message" => "Registration successful",
-                "token" => $token,
-                "user" => $user,
-            ], 201);
+                "message" => $validator->errors()->first(),
+                "errors" => $validator->errors()
+            ], 422);
         }
+
+        $role =$request->roles ?? "warga";
+
+        $user = User::create([
+            "name" => $request->name,
+            "email" => $request->email,
+            "roles" => $role,
+            "password" => Hash::make($request->password),
+            "nis" => $role === 'siswa' ?$request->nis : null,
+            "nik" => $role === 'warga' ?$request->nik : null,
+        ]);
+
+        $token =$user->createToken("auth-token")->plainTextToken;
+
+        return response()->json([
+            "message" => "Registration successful",
+            "token" => $token,
+            "user" => $user,
+        ], 201);
+    }
 
     public function login(Request $request)
     {
@@ -49,53 +56,42 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    "errors" => $validator->errors(),
-                ],
-                422,
-            );
+            return response()->json(["errors" => $validator->errors()], 422);
         }
 
         $user = User::where("email", $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(
-                [
-                    "errors" => [
-                        "email" => ["The provided credentials are incorrect."],
-                    ],
+        if (!$user || !Hash::check($request->password,$user->password)) {
+            return response()->json([
+                "message" => "Email atau kata sandi salah.",
+                "errors" => [
+                    "email" => ["The provided credentials are incorrect."],
                 ],
-                422,
-            );
+            ], 422);
         }
 
-        $token = $user->createToken("auth-token")->plainTextToken;
+        $token =$user->createToken("auth-token")->plainTextToken;
 
-        return response()->json(
-            [
-                "message" => "Login successful",
-                "token" => $token,
-                "user" => [
-                    "id" => $user->id,
-                    "name" => $user->name,
-                    "email" => $user->email,
-                    "roles" => $user->roles,
-                ],
+        return response()->json([
+            "message" => "Login successful",
+            "token" => $token,
+            "user" => [
+                "id" => $user->id,
+                "name" => $user->name,
+                "email" => $user->email,
+                "roles" => $user->roles,
+                "nik" => $user->nik,
+                "nis" => $user->nis,
             ],
-            200,
-        );
+        ], 200);
     }
 
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json(
-            [
-                "message" => "Logout successful",
-            ],
-            200,
-        );
+        return response()->json([
+            "message" => "Logout successful",
+        ], 200);
     }
 }

@@ -5,21 +5,19 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Reports;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 
 class ReportController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-        $reports = Reports::with("user:id,name,email")->latest()->get();
-
-        return response()->json(
-            [
-                "success" => true,
-                "data" => $reports,
-            ],
-            200,
-        );
+        $reports = \App\Models\Reports::with('user')->latest()->get();
+        return response()->json([
+            "success" => true,
+            "data" => $reports
+        ], 200);
     }
 
     public function showStatus($status)
@@ -62,56 +60,76 @@ class ReportController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            "title" => "required|string|max:150",
-            "description" => "required|string",
-            "location" => "required|string",
-            "category" =>
-                "required|in:merokok,tawuran,merusak_fasilitas,membuat_kegaduhan,parkir_sembarangan,lainnya",
-            "is_anonymous" => "nullable|boolean",
-            "evidence_file" => "nullable|file|mimes:png,jpg,jpeg,mp4|max:10240",
-        ]);
+        {
+            $validator = Validator::make($request->all(), [
+                "title" => "required|string|max:150",
+                "description" => "required|string",
+                "location" => "required|string",
+                "category" =>
+                    "required|in:merokok,tawuran,merusak_fasilitas,buang_sampah_sembarangan,membuat_kegaduhan,parkir_sembarangan,lainnya",
+                "is_anonymous" => "nullable|boolean",
+                "evidence_file" => "nullable|image|mimes:png,jpg,jpeg,webp|max:2048",
+            ], [
+                "evidence_file.image" => "Lampiran harus berupa file gambar.",
+                "evidence_file.mimes" => "Format gambar harus JPG, JPEG, PNG, atau WEBP.",
+                "evidence_file.max" => "Ukuran gambar maksimal adalah 2MB agar tidak memberatkan server.",
+            ]);
 
-        if ($validator->fails()) {
+            if ($validator->fails()) {
+                return response()->json(
+                    [
+                        "success" => false,
+                        "message" => $validator->errors()->first(),
+                        "errors" => $validator->errors(),
+                    ],
+                    422,
+                );
+            }
+
+            // Di dalam method store() menggantikan ->store("evidence_files", "public"):
+            $evidenceFilePath = null;
+            if ($request->hasFile("evidence_file")) {
+                $file = $request->file("evidence_file");
+                $fileName = Str::uuid() . '.' . $file->getClientOriginalExtension();
+                $supabaseUrl = rtrim(env('SUPABASE_URL'), '/');
+                $supabaseKey = env('SUPABASE_SERVICE_KEY');
+
+                $uploadResponse = Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $supabaseKey,
+                    'apikey' => $supabaseKey,
+                    'Content-Type' => $file->getMimeType(),
+                ])->withBody(
+                    file_get_contents($file->getRealPath()),
+                    $file->getMimeType()
+                )->post("{$supabaseUrl}/storage/v1/object/evidence/{$fileName}");
+
+                if ($uploadResponse->successful()) {
+                    $evidenceFilePath = "{$supabaseUrl}/storage/v1/object/public/evidence/{$fileName}";
+                }
+            }
+
+            $userId = $request->user() ? $request->user()->id : $request->user_id;
+
+            $report = Reports::create([
+                "user_id" => $userId,
+                "title" => $request->title,
+                "description" => $request->description,
+                "location" => $request->location,
+                "category" => $request->category,
+                "status" => "menunggu",
+                "is_anonymous" => $request->boolean("is_anonymous", false),
+                "evidence_image" => $evidenceFilePath,
+            ]);
+
             return response()->json(
                 [
-                    "success" => false,
-                    "errors" => $validator->errors(),
+                    "success" => true,
+                    "message" => "Laporan berhasil dibuat",
+                    "data" => $report,
                 ],
-                422,
+                201,
             );
         }
-
-        $evidenceFilePath = null;
-        if ($request->hasFile("evidence_file")) {
-            $evidenceFilePath = $request
-                ->file("evidence_file")
-                ->store("evidence_files", "public");
-        }
-
-        $userId = $request->user() ? $request->user()->id : $request->user_id;
-
-        $report = Reports::create([
-            "user_id" => $userId,
-            "title" => $request->title,
-            "description" => $request->description,
-            "location" => $request->location,
-            "category" => $request->category,
-            "status" => "menunggu",
-            "is_anonymous" => $request->boolean("is_anonymous", false),
-            "evidence_image" => $evidenceFilePath,
-        ]);
-
-        return response()->json(
-            [
-                "success" => true,
-                "message" => "Laporan berhasil dibuat",
-                "data" => $report,
-            ],
-            201,
-        );
-    }
 
     public function update(Request $request, $title)
     {

@@ -8,14 +8,13 @@
       class="fixed inset-0 bg-slate-950/60 z-40 md:hidden backdrop-blur-sm transition-opacity"
     ></div>
 
-    <!-- SIDEBAR (Fixed Drawer di Mobile, Permanent di Desktop) -->
+    <!-- SIDEBAR -->
     <aside
       :class="[
         'w-64 bg-slate-900 text-white flex flex-col shrink-0 h-full fixed md:static z-50 transition-transform duration-300 ease-in-out border-r border-slate-800',
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       ]"
     >
-      <!-- Sidebar Header -->
       <div class="h-16 flex items-center justify-between px-6 bg-slate-950 font-black tracking-wider text-lg border-b border-slate-800 shrink-0">
         <div class="flex items-center gap-2.5">
           <div class="w-8 h-8 rounded-xl bg-[#12544F] text-white flex items-center justify-center font-bold text-sm shadow-md">
@@ -30,7 +29,6 @@
         </button>
       </div>
 
-      <!-- Navigation Links -->
       <nav class="flex-1 p-4 space-y-1.5 text-xs font-bold overflow-y-auto">
         <button
           @click="switchTab('dashboard')"
@@ -74,7 +72,7 @@
       </nav>
     </aside>
 
-    <!-- MAIN WRAPPER (Strict min-w-0 agar tidak terdorong keluar) -->
+    <!-- MAIN WRAPPER -->
     <div class="flex-1 flex flex-col min-w-0 h-full w-full overflow-hidden">
 
       <!-- TOP NAVBAR -->
@@ -125,32 +123,92 @@
           </div>
 
           <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-6">
-            <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-              <h2 class="text-sm md:text-base font-extrabold text-slate-900">Index Laporan Terbaru</h2>
-              <button @click="loadAllData" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors">
-                Refresh
-              </button>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
+              <div>
+                <h2 class="text-sm md:text-base font-extrabold text-slate-900">Index Laporan Terbaru</h2>
+                <p class="text-[11px] text-slate-400 font-medium">Cari laporan berdasarkan judul pengaduan, nama pelapor, NIK, atau NIS.</p>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <!-- Input Searching -->
+                <div class="relative flex-1 sm:w-72">
+                  <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                  </svg>
+                  <input
+                    v-model="searchQuery"
+                    type="text"
+                    placeholder="Cari nama laporan / NIK / NIS..."
+                    class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium outline-none focus:border-[#12544F] focus:bg-white transition-all"
+                  />
+                </div>
+
+                <button @click="loadAllData" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors shrink-0">
+                  Refresh
+                </button>
+              </div>
             </div>
 
             <div class="overflow-x-auto rounded-xl border border-slate-100">
-              <table class="w-full text-left border-collapse text-xs min-w-[650px]">
+              <table class="w-full text-left border-collapse text-xs min-w-[780px]">
                 <thead>
                   <tr class="bg-slate-50 border-b border-slate-200 text-slate-400 font-extrabold uppercase tracking-wider">
-                    <th class="py-3 px-4">Judul Pengaduan</th>
+                    <th class="py-3 px-4">Judul Pengaduan & Pelapor</th>
+                    <th class="py-3 px-4">Lampiran Foto</th>
                     <th class="py-3 px-4">Kategori</th>
                     <th class="py-3 px-4">Status</th>
                     <th class="py-3 px-4 text-right">Ubah Status</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 font-medium">
-                  <tr v-if="reports.length === 0">
-                    <td colspan="4" class="py-6 text-center text-slate-400">Belum ada laporan masuk.</td>
+                  <tr v-if="filteredReports.length === 0">
+                    <td colspan="5" class="py-6 text-center text-slate-400">
+                      {{ searchQuery ? 'Tidak ada laporan yang cocok dengan pencarian.' : 'Belum ada laporan masuk.' }}
+                    </td>
                   </tr>
-                  <tr v-for="r in reports" :key="r.id" class="hover:bg-slate-50/50">
+                  <tr v-for="r in filteredReports" :key="r.id" class="hover:bg-slate-50/50">
                     <td class="py-3.5 px-4">
                       <p class="font-bold text-slate-900">{{ r.title }}</p>
-                      <span class="text-[10px] text-slate-400 font-mono">#{{ r.id.substring(0,8) }} • {{ r.location }}</span>
+                      <div class="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
+                        <span class="font-mono">#{{ r.id.substring(0,8) }}</span>
+                        <span>• {{ r.location }}</span>
+                        <span v-if="!r.is_anonymous && r.user" class="text-slate-600 font-semibold">
+                          • Pelapor: {{ r.user.name }}
+                          <span v-if="r.user.nik" class="font-mono text-teal-700">(NIK: {{ r.user.nik }})</span>
+                          <span v-else-if="r.user.nis" class="font-mono text-indigo-700">(NIS: {{ r.user.nis }})</span>
+                        </span>
+                        <span v-else-if="r.is_anonymous" class="italic text-slate-400">• Anonim</span>
+                      </div>
                     </td>
+
+                    <!-- Kolom Lampiran Foto -->
+                    <td class="py-3.5 px-4">
+                      <template v-if="getEvidenceUrl(r)">
+                        <a
+                          v-if="!isVideoFile(getEvidenceUrl(r))"
+                          :href="getEvidenceUrl(r)"
+                          target="_blank"
+                          title="Klik untuk memperbesar foto"
+                          class="inline-block group relative"
+                        >
+                          <img
+                            :src="getEvidenceUrl(r)"
+                            alt="Lampiran Laporan"
+                            class="w-12 h-12 object-cover rounded-lg border border-slate-200 shadow-xs group-hover:scale-105 transition-transform"
+                          />
+                        </a>
+                        <a
+                          v-else
+                          :href="getEvidenceUrl(r)"
+                          target="_blank"
+                          class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px]"
+                        >
+                          🎥 Video
+                        </a>
+                      </template>
+                      <span v-else class="text-[11px] text-slate-400 italic">Tidak ada</span>
+                    </td>
+
                     <td class="py-3.5 px-4 capitalize">{{ r.category }}</td>
                     <td class="py-3.5 px-4">
                       <span :class="['px-2.5 py-1 rounded-md text-[10px] font-extrabold capitalize', getStatusBadge(r.status)]">
@@ -181,7 +239,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-4 md:p-6 rounded-2xl border border-slate-200 gap-3">
             <div>
               <h2 class="text-sm md:text-base font-extrabold text-slate-900">Daftar Siswa Terdaftar</h2>
-              <p class="text-xs text-slate-500 font-medium">Email & Password dibuat otomatis dari nama & NIK.</p>
+              <p class="text-xs text-slate-500 font-medium">Email & Password dibuat otomatis dari nama & NIS.</p>
             </div>
             <button @click="openAddModal('siswa')" class="px-4 py-2.5 bg-[#12544F] hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-md transition-all">
               + Tambah Siswa
@@ -194,8 +252,8 @@
                 <thead class="bg-slate-50 border-b border-slate-200 text-slate-400 font-extrabold uppercase">
                   <tr>
                     <th class="py-3 px-4">Nama Siswa</th>
-                    <th class="py-3 px-4">NIK</th>
-                    <th class="py-3 px-4">Email Otomatis</th>
+                    <th class="py-3 px-4">NIS</th>
+                    <th class="py-3 px-4">Email</th>
                     <th class="py-3 px-4 text-right">Aksi</th>
                   </tr>
                 </thead>
@@ -205,7 +263,7 @@
                   </tr>
                   <tr v-for="s in siswaList" :key="s.id">
                     <td class="py-3.5 px-4 font-bold text-slate-900">{{ s.name }}</td>
-                    <td class="py-3.5 px-4 font-mono text-slate-600">{{ s.nik || '-' }}</td>
+                    <td class="py-3.5 px-4 font-mono text-slate-600">{{ s.nis || '-' }}</td>
                     <td class="py-3.5 px-4 text-slate-500 font-mono">{{ s.email }}</td>
                     <td class="py-3.5 px-4 text-right">
                       <button @click="deleteUser(s.name)" class="text-rose-600 font-bold hover:underline">Hapus</button>
@@ -260,22 +318,24 @@
 
         <!-- TAB 4: DATA WARGA -->
         <div v-if="currentTab === 'warga'" class="bg-white rounded-2xl border border-slate-200 p-4 md:p-6">
-          <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-4">Daftar Warga Login (Default)</h2>
+          <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-4">Daftar Warga Terdaftar</h2>
           <div class="overflow-x-auto rounded-xl border border-slate-100">
             <table class="w-full text-left text-xs min-w-[600px]">
               <thead class="bg-slate-50 border-b border-slate-200 text-slate-400 font-extrabold uppercase">
                 <tr>
                   <th class="py-3 px-4">Nama Warga</th>
+                  <th class="py-3 px-4">NIK</th>
                   <th class="py-3 px-4">Email</th>
                   <th class="py-3 px-4">Tanggal Bergabung</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 font-medium">
                 <tr v-if="wargaList.length === 0">
-                  <td colspan="3" class="py-6 text-center text-slate-400">Belum ada akun warga.</td>
+                  <td colspan="4" class="py-6 text-center text-slate-400">Belum ada akun warga.</td>
                 </tr>
                 <tr v-for="w in wargaList" :key="w.id">
                   <td class="py-3.5 px-4 font-bold text-slate-900">{{ w.name }}</td>
+                  <td class="py-3.5 px-4 font-mono text-slate-600">{{ w.nik || '-' }}</td>
                   <td class="py-3.5 px-4 text-slate-500 font-mono">{{ w.email }}</td>
                   <td class="py-3.5 px-4 text-slate-400">{{ new Date(w.created_at).toLocaleDateString('id-ID') }}</td>
                 </tr>
@@ -343,8 +403,8 @@
           </div>
 
           <div v-if="modalTarget === 'siswa'">
-            <label class="block font-bold text-slate-700 uppercase mb-1">NIK Siswa</label>
-            <input v-model="userForm.nik" type="text" required placeholder="Masukkan NIK siswa" class="w-full px-4 py-3 rounded-xl border border-slate-300 font-medium outline-none focus:border-[#12544F]">
+            <label class="block font-bold text-slate-700 uppercase mb-1">NIS Siswa</label>
+            <input v-model="userForm.nis" type="text" required placeholder="Masukkan NIS siswa" class="w-full px-4 py-3 rounded-xl border border-slate-300 font-medium outline-none focus:border-[#12544F]">
           </div>
 
           <div v-if="modalTarget === 'staff'">
@@ -403,14 +463,42 @@ const isSidebarOpen = ref(false)
 const showAddModal = ref(false)
 const showChatbotModal = ref(false)
 const modalTarget = ref('siswa')
+const searchQuery = ref('')
 
 const stats = reactive({})
 const reports = ref([])
 const allUsers = ref([])
 const chatbotList = ref([])
 
-const userForm = reactive({ name: '', roles: 'siswa', nik: '' })
+const userForm = reactive({ name: '', roles: 'siswa', nis: '' })
 const chatbotForm = reactive({ keyword: '', response: '' })
+
+// Filter pencarian laporan (Nama Laporan / Nama Pelapor / NIK / NIS)
+const filteredReports = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return reports.value
+
+  return reports.value.filter(r => {
+    const title = (r.title || '').toLowerCase()
+    const userName = (r.user?.name || '').toLowerCase()
+    const nik = (r.user?.nik || '').toLowerCase()
+    const nis = (r.user?.nis || '').toLowerCase()
+
+    return title.includes(q) || userName.includes(q) || nik.includes(q) || nis.includes(q)
+  })
+})
+
+// Helper URL Lampiran Foto / Video
+const getEvidenceUrl = (report) => {
+  const path = report.evidence_image || report.evidence_file || report.image
+  if (!path) return null
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  return `/storage/${path.replace(/^\/?storage\//, '')}`
+}
+
+const isVideoFile = (url) => {
+  return /\.(mp4|webm|ogg)$/i.test(url)
+}
 
 // Filter dynamic user roles
 const siswaList = computed(() => allUsers.value.filter(u => u.roles === 'siswa'))
@@ -431,7 +519,7 @@ const getAuthHeaders = () => ({
 const openAddModal = (target) => {
   modalTarget.value = target
   userForm.name = ''
-  userForm.nik = ''
+  userForm.nis = ''
   userForm.roles = target === 'siswa' ? 'siswa' : 'guru'
   showAddModal.value = true
 }
@@ -505,7 +593,7 @@ const submitAddUser = async () => {
         html: `
           <div class="text-left text-xs space-y-2 mt-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
             <p><b>Nama:</b> ${data.data.user.name}</p>
-            ${data.data.user.nik ? `<p><b>NIK:</b> ${data.data.user.nik}</p>` : ''}
+            ${data.data.user.nis ? `<p><b>NIS:</b> ${data.data.user.nis}</p>` : ''}
             <p><b>Role:</b> <span class="uppercase font-bold text-[#12544F]">${data.data.user.roles}</span></p>
             <hr class="border-slate-200 my-1">
             <p><b>Email Sistem:</b> <code class="bg-white px-1.5 py-0.5 rounded border border-slate-200 text-teal-800 font-bold">${data.data.generated_email}</code></p>
@@ -518,7 +606,7 @@ const submitAddUser = async () => {
 
       showAddModal.value = false
       userForm.name = ''
-      userForm.nik = ''
+      userForm.nis = ''
       loadAllData()
     } else {
       Swal.fire({ icon: 'error', title: 'Gagal', text: data.message || 'Gagal menambahkan akun.' })

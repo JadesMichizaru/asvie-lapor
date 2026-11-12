@@ -63,7 +63,7 @@ class AdminController extends Controller
         $validator = Validator::make($request->all(), [
             "name" => "required|string|max:255",
             "roles" => "required|in:admin,staff,guru,siswa,warga",
-            "nik" => "required_if:roles,siswa|nullable|string",
+            "nis" => "required_if:roles,siswa|nullable|string",
         ]);
 
         if ($validator->fails()) {
@@ -82,10 +82,10 @@ class AdminController extends Controller
             $generatedEmail = $baseSlug . ($count + 1) . "@school.id";
         }
 
-        // Otomatisasi generate Password berdasarkan Role & NIK
+        // Otomatisasi generate Password berdasarkan Role & NIS
         $defaultPassword = "gurupassword543";
         if ($request->roles === "siswa") {
-            $defaultPassword = "siswa" . ($request->nik ?? "123");
+            $defaultPassword = "siswa" . ($request->nis ?? "123");
         }
 
         $user = User::create([
@@ -93,7 +93,7 @@ class AdminController extends Controller
             "email" => $generatedEmail,
             "password" => Hash::make($defaultPassword),
             "roles" => $request->roles,
-            "nik" => $request->nik,
+            "nis" => $request->nis,
         ]);
 
         return response()->json([

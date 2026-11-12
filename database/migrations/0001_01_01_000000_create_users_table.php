@@ -15,7 +15,9 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('email')->unique();
-            $table->enum('roles', ['admin','guru','warga', 'siswa'])->default('warga')->nullable();
+            $table->string('nis')->unique()->nullable();
+            $table->string('nik')->unique()->nullable();
+            $table->enum('roles', ['admin', 'guru', 'warga', 'siswa'])->default('warga')->nullable();
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();

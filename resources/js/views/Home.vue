@@ -148,15 +148,15 @@
             </div>
 
             <div class="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <label class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-slate-300 hover:border-[#12544F] text-slate-700 hover:text-[#12544F] text-xs font-bold cursor-pointer transition-colors bg-slate-50/50">
-                  <svg class="w-4 h-4 text-[#12544F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
-                  </svg>
-                  <span>{{ fileName || 'Upload bukti (Foto/Video Maks 10MB)' }}</span>
-                  <input type="file" ref="fileInput" @change="handleFileChange" class="hidden" accept="image/png,image/jpeg,image/jpg,video/mp4">
-                </label>
-              </div>
+                <div>
+                  <label class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-slate-300 hover:border-[#12544F] text-slate-700 hover:text-[#12544F] text-xs font-bold cursor-pointer transition-colors bg-slate-50/50">
+                    <svg class="w-4 h-4 text-[#12544F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                    </svg>
+                    <span>{{ fileName || 'Upload bukti foto (JPG/PNG/WEBP Maks 2MB)' }}</span>
+                    <input type="file" ref="fileInput" @change="handleFileChange" class="hidden" accept="image/png,image/jpeg,image/jpg,image/webp">
+                  </label>
+                </div>
 
               <div class="flex items-center gap-6">
                 <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">
@@ -378,52 +378,58 @@
     </footer>
 
     <!-- AUTH MODAL -->
-    <div v-if="showAuthModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-white rounded-3xl max-w-sm w-full p-6 sm:p-8 shadow-2xl relative animate-scale-up">
-        <button @click="showAuthModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
-        <div class="text-center mb-6">
-          <div class="w-10 h-10 bg-[#12544F] text-white rounded-lg flex items-center justify-center font-black mx-auto mb-3">L!</div>
-          <h3 class="text-lg font-extrabold text-slate-900">{{ authMode === 'login' ? 'Masuk ke ASVIELAPOR!' : 'Daftar Akun Baru' }}</h3>
+        <div v-if="showAuthModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="bg-white rounded-3xl max-w-sm w-full p-6 sm:p-8 shadow-2xl relative animate-scale-up">
+            <button @click="showAuthModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
+            <div class="text-center mb-6">
+              <div class="w-10 h-10 bg-[#12544F] text-white rounded-lg flex items-center justify-center font-black mx-auto mb-3">L!</div>
+              <h3 class="text-lg font-extrabold text-slate-900">{{ authMode === 'login' ? 'Masuk ke ASVIELAPOR!' : 'Daftar Akun Baru' }}</h3>
+            </div>
+
+            <form @submit.prevent="handleAuthSubmit" class="space-y-4">
+              <div v-if="authMode === 'register'" class="space-y-4">
+                <!-- Pilihan Role -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Daftar Sebagai</label>
+                  <select v-model="authForm.roles" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none bg-white">
+                    <option value="warga">Warga / Masyarakat Umum</option>
+                    <option value="siswa">Siswa / Siswi Sekolah</option>
+                  </select>
+                </div>
+
+                <!-- NIK Khusus Warga -->
+                <div v-if="authForm.roles === 'warga'" class="animate-slide-up">
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">NIK (Nomor Induk Kependudukan)</label>
+                  <input v-model="authForm.nik" type="text" required placeholder="Masukkan 16 digit NIK" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none">
+                </div>
+
+                <!-- NIS Khusus Siswa -->
+                <div v-if="authForm.roles === 'siswa'" class="animate-slide-up">
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">NIS (Nomor Induk Siswa)</label>
+                  <input v-model="authForm.nis" type="text" required placeholder="Masukkan NIS Sekolah" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none">
+                </div>
+
+                <!-- Field Nama -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap</label>
+                  <input v-model="authForm.name" type="text" required placeholder="Masukkan nama lengkap" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Email</label>
+                <input v-model="authForm.email" type="email" required placeholder="nama@email.com" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Kata Sandi</label>
+                <input v-model="authForm.password" type="password" required placeholder="Minimal 8 karakter" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none">
+              </div>
+              <button type="submit" class="w-full py-3.5 bg-[#12544F] hover:bg-teal-800 text-white font-extrabold text-xs rounded-xl transition-all mt-2">
+                {{ authMode === 'login' ? 'Masuk' : 'Daftar' }}
+              </button>
+            </form>
+          </div>
         </div>
-
-        <form @submit.prevent="handleAuthSubmit" class="space-y-4">
-                  <div v-if="authMode === 'register'" class="space-y-4">
-                    <!-- Pilihan Role -->
-                    <div>
-                      <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Daftar Sebagai</label>
-                      <select v-model="authForm.roles" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none bg-white">
-                        <option value="warga">Warga / Masyarakat Umum</option>
-                        <option value="siswa">Siswa / Siswi Sekolah</option>
-                      </select>
-                    </div>
-
-                    <!-- NIK Khusus Siswa -->
-                    <div v-if="authForm.roles === 'siswa'" class="animate-slide-up">
-                      <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">NIK (Nomor Induk Kependudukan)</label>
-                      <input v-model="authForm.nik" type="text" required placeholder="Masukkan NIK" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none">
-                    </div>
-
-                    <!-- Field Nama -->
-                    <div>
-                      <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap</label>
-                      <input v-model="authForm.name" type="text" required class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none">
-                    </div>
-                  </div>
-
-                  <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Email</label>
-                    <input v-model="authForm.email" type="email" required class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none">
-                  </div>
-                  <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Kata Sandi</label>
-                    <input v-model="authForm.password" type="password" required class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none">
-                  </div>
-                  <button type="submit" class="w-full py-3.5 bg-[#12544F] hover:bg-teal-800 text-white font-extrabold text-xs rounded-xl transition-all mt-2">
-                    {{ authMode === 'login' ? 'Masuk' : 'Daftar' }}
-                  </button>
-                </form>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -467,8 +473,10 @@ const form = reactive({
 
 const authForm = reactive({
   name: '',
-email: '',
+  email: '',
   roles: 'warga',
+  nik: '',
+  nis: '',
   password: ''
 })
 
@@ -539,10 +547,39 @@ const sendBrowserNotification = (title, body) => {
 
 const handleFileChange = (e) => {
   const file = e.target.files[0]
-  if (file) {
-    fileName.value = file.name
-    form.evidence_file = file
+  if (!file) return
+
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+  const maxSize = 2 * 1024 * 1024 // 2MB
+
+  if (!allowedTypes.includes(file.type)) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Format Tidak Didukung',
+      text: 'Hanya file gambar (JPG, JPEG, PNG, WEBP) yang diperbolehkan.',
+      confirmButtonColor: '#12544F'
+    })
+    e.target.value = ''
+    fileName.value = ''
+    form.evidence_file = null
+    return
   }
+
+  if (file.size > maxSize) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Ukuran File Terlalu Besar',
+      text: 'Maksimal ukuran gambar adalah 2MB.',
+      confirmButtonColor: '#12544F'
+    })
+    e.target.value = ''
+    fileName.value = ''
+    form.evidence_file = null
+    return
+  }
+
+  fileName.value = file.name
+  form.evidence_file = file
 }
 
 const handleFormSubmit = async () => {
