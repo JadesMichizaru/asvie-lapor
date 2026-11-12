@@ -27,9 +27,11 @@ foreach ($dirs as $dir) {
     }
 }
 
-// 5. Force JSON Header untuk mengatasi error rendering exception
+// 5. Capture Request (Hanya paksa JSON untuk request non-HTML / AJAX)
 $request = Request::capture();
-$request->headers->set('Accept', 'application/json');
+if ($request->wantsJson() || $request->ajax() || str_starts_with($request->path(), 'api')) {
+    $request->headers->set('Accept', 'application/json');
+}
 
 // 6. Jalankan Kernel
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
